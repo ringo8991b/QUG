@@ -11,6 +11,7 @@ from pathlib import Path
 
 ROOT = Path(__file__).resolve().parent
 MASTER = ROOT / "sg-qug-agent-master.md"
+AGENT_INSTALL = ROOT / "AGENT_INSTALL.md"
 RUNTIMES = {
     "English": ROOT / "sg-qug-agent-en.md",
     "Japanese": ROOT / "sg-qug-agent-ja.md",
@@ -65,6 +66,15 @@ LANGUAGE_REQUIREMENTS = {
     ),
 }
 
+INSTALL_REQUIREMENTS = (
+    "<!-- prompt-agent-version:",
+    "## Non-Negotiable Rules",
+    "あなたの名前は `QUG` です。",
+    "会話履歴から再構成するsession variables",
+    "送信直前の言語検査",
+    *COMMON_REQUIREMENTS,
+)
+
 
 def sha256(path: Path) -> str:
     return hashlib.sha256(path.read_bytes()).hexdigest()
@@ -76,7 +86,7 @@ def fail(message: str, errors: list[str]) -> None:
 
 def main() -> int:
     errors: list[str] = []
-    paths = (MASTER, *RUNTIMES.values())
+    paths = (MASTER, AGENT_INSTALL, *RUNTIMES.values())
     for path in paths:
         if not path.is_file():
             fail(f"missing file: {path.name}", errors)
@@ -89,6 +99,21 @@ def main() -> int:
     master_text = MASTER.read_text(encoding="utf-8")
     if "enabled: false" not in master_text:
         fail("master must remain disabled and non-runtime", errors)
+
+    install_text = AGENT_INSTALL.read_text(encoding="utf-8")
+    install_match = SOURCE_PATTERN.search(install_text)
+    if not install_match:
+        fail(f"{AGENT_INSTALL.name} has no source hash marker", errors)
+    elif install_match.group(1) != master_hash:
+        fail(
+            f"{AGENT_INSTALL.name} is out of sync with {MASTER.name}: "
+            f"marker={install_match.group(1)}, current={master_hash}",
+            errors,
+        )
+
+    for phrase in INSTALL_REQUIREMENTS:
+        if phrase not in install_text:
+            fail(f"{AGENT_INSTALL.name} is missing required phrase: {phrase}", errors)
 
     for language, path in RUNTIMES.items():
         text = path.read_text(encoding="utf-8")
@@ -119,6 +144,7 @@ def main() -> int:
         return 1
 
     print(f"OK: master hash {master_hash}")
+    print("OK: loglm install prompt passes structural sync checks")
     print("OK: English and Japanese runtimes pass structural sync checks")
     return 0
 

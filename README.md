@@ -1,12 +1,13 @@
 # QUG: Questifying Uncertainty Game
 
-QUG is a Discord agent prompt for running short, game-structured roleplay sessions around unresolved uncertainty. It translates a recent stuck situation into a playable analogue, lets the player enact bounded choices, and returns to one manageable action without requiring the larger uncertainty to be resolved first.
+QUG is an agent prompt for running short, game-structured roleplay sessions around unresolved uncertainty. It translates a recent stuck situation into a playable analogue, lets the player enact bounded choices, and returns to one manageable action without requiring the larger uncertainty to be resolved first.
 
-This repository contains the QUG specification and language-specific agent definitions for [`discord-agent-hub`](https://github.com/ks91/discord-agent-hub).
+This repository contains the QUG specification, a prompt-agent package for [`loglm`](https://github.com/ks91/loglm), and language-specific agent definitions for [`discord-agent-hub`](https://github.com/ks91/discord-agent-hub).
 
 ## Repository Contents
 
 - `sg-qug-agent-master.md` - non-runtime master specification and research design source of truth. Edit this file first. It is intentionally disabled.
+- `AGENT_INSTALL.md` - shared QUG prompt installed into coding-agent projects by `loglm`.
 - `sg-qug-agent-en.md` - English runtime with Normal and Demo modes. Use this for the JCSG conference demonstration.
 - `sg-qug-agent-ja.md` - Japanese runtime with Normal and Demo modes.
 - `check_qug_runtime_sync.py` - checks source hashes, required mechanics, language separation, and runtime metadata.
@@ -41,14 +42,30 @@ The master retains the complete bilingual design rationale and state rules. Runt
 ## Editing Workflow
 
 1. Update `sg-qug-agent-master.md` first.
-2. Apply the same behavioral change to both language runtimes.
-3. Update each runtime's `source-sha256` marker to the current master SHA-256.
+2. Apply the same behavioral change to `AGENT_INSTALL.md` and both language runtimes.
+3. Update all three files' `source-sha256` markers to the current master SHA-256.
 4. Run `python3 check_qug_runtime_sync.py`.
-5. Test English and Japanese Normal/Demo paths before deployment.
+5. Test the loglm-installed prompt and the English and Japanese Normal/Demo paths before deployment.
 
-The checker deliberately fails after any master edit until both runtime source markers are refreshed. It also rejects `SESSION_LANGUAGE` in a runtime and Japanese characters in the English runtime. It is a drift guard, not a substitute for bilingual behavioral testing.
+The checker deliberately fails after any master edit until the install prompt and both runtime source markers are refreshed. It also rejects `SESSION_LANGUAGE` in a runtime and Japanese characters in the English runtime. It is a drift guard, not a substitute for behavioral testing.
 
-Each runtime stores its `source-sha256` marker in an HTML comment near the top of the file. The marker is visible in GitHub's Code or Raw view but hidden in rendered Markdown.
+The install prompt and each runtime store their `source-sha256` marker in an HTML comment near the top of the file. The marker is visible in GitHub's Code or Raw view but hidden in rendered Markdown.
+
+## Install with loglm
+
+From the project where you want to use QUG, install this repository as a prompt agent:
+
+```bash
+loglm agent install ringo8991b/QUG
+```
+
+For local development, install directly from a neighboring checkout:
+
+```bash
+loglm agent install ../QUG
+```
+
+`loglm` reads `AGENT_INSTALL.md`, writes the installed prompt into the target project, and adds its managed reference to the coding agent's instruction file. After the new agent context opens, send a short cue such as `QUGを始めよう。` to begin.
 
 ## Importing Into Discord Agent Hub
 
